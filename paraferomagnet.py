@@ -15,7 +15,8 @@ class FieldPolarizedMagnet:
         self.r = r
         self.u = u
         self.H = H
-        self.computeML()        
+        self.computeML()
+        self.valid = True
         
     def computeML(self):
         complex_mls = np.roots([self.u, 0.0, self.r, -self.H])
