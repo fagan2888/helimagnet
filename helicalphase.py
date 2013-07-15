@@ -36,6 +36,25 @@ class HelicalPhase:
         
     def solve_eqn(self):
         q, betasq, ml, md, m0 = sympy.symbols('q,betasq,ml,md,m0')
+        nbetasq = self.model_betasq()
         eqn1, eqn2, eqn3, eqn4, eqn5 = self.get_eqns()
-        sols = sympy.solve([eqn1, eqn2, eqn3, eqn4, eqn5], [q, betasq, ml, md, m0])
+        sols = sympy.solve([eqn1.subs(betasq, nbetasq), 
+                            eqn2.subs(betasq, nbetasq), 
+                            eqn3.subs(betasq, nbetasq),
+                            eqn4.subs(betasq, nbetasq)],
+                           [q, ml, md, m0])
+        for sol in sols:
+            sol[betasq] = nbetasq     
         return sols
+        
+    def model_betasq(self):
+        r = self.r
+        a = self.a
+        c = self.c
+        u = self.u
+        H = self.H
+        a1 = self.a1
+        m0sq = 1/u * (0.5*c*c/a-r-16*a*a*H*H*u/(c*c*c*c))
+        mlsq = 16*a*a*H*H/(c*c*c*c)
+        betasq = (1-0.5*a/a1*mlsq/m0sq) / 3
+        return betasq
