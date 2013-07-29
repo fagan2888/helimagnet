@@ -6,6 +6,7 @@ Created on Fri Jul 12 16:38:09 2013
 """
 
 import sympy
+import math
 
 class HelicalPhase:
     def __init__(self, r=0.0001, a=1.0, c=0.025, u=0.1, H=0, a1=0.01):
@@ -18,6 +19,7 @@ class HelicalPhase:
         self.u = u
         self.H = H
         self.a1 = a1
+        self.compute_all()
     
     def get_eqns(self):    
         r = self.r
@@ -43,8 +45,9 @@ class HelicalPhase:
                             eqn3.subs(betasq, nbetasq),
                             eqn4.subs(betasq, nbetasq)],
                            [q, ml, md, m0])
-        for sol in sols:
-            sol[betasq] = nbetasq     
+        # check imaginary: not yet done
+        isValid = lambda item: item[0]>0 and item[1]>=0 and item[2]>=0 and item[3]>0
+        sols = filter(isValid, sols)
         return sols
         
     def model_betasq(self):
@@ -58,3 +61,58 @@ class HelicalPhase:
         mlsq = 16*a*a*H*H/(c*c*c*c)
         betasq = (1-0.5*a/a1*mlsq/m0sq) / 3
         return betasq
+        
+    def primitiveFreeEnergyDensity(self, q, ml, md, m0, betasq):
+        r = self.r
+        a = self.a
+        c = self.c
+        u = self.u
+        H = self.H
+        a1 = self.a1
+        fe = 0.5*(r+a*q*q-c*q)+0.25*u*m0*m0*m0*m0
+        fe += 0.5*r*ml*ml+0.25*u*ml*ml*ml*ml-H*ml*math.sqrt(1-2*betasq)
+        fe += 0.5*r*md*md+0.25*u*md*md*md*md-H*md*math.sqrt(2*betasq)
+        fe += 0.5*u*(ml*ml*md*md+ml*ml*m0*m0+2*m0*m0*md*md)
+        fe += -a1*q*q*m0*m0*(2-3*betasq)*betasq
+        return fe
+        
+    def compute_all(self):
+        betasq = self.model_betasq()
+        sols = self.solve_eqn()
+        if len(sols) == 0:
+            self.valid = False
+        else:
+            fed = lambda sol: self.primitiveFreeEnergyDensity(sol[0], sol[1],
+                                                              sol[2], sol[3],
+                                                              betasq)
+            fenergies = map(fed, sols)
+            sol_fe_pairs = zip(sols, fenergies)
+            sol_fe_pairs = sorted(sol_fe_pairs, key=lambda item: item[1])
+            print sol_fe_pairs
+            print len(sol_fe_pairs)
+            sol = sol_fe_pairs[0][0]
+            self.q = sol[0]
+            self.ml = sol[1]
+            self.md = sol[2]
+            self.m0 = sol[3]
+            self.beta = math.sqrt(betasq)
+            self.fe = sol_fe_pairs[1]
+            self.valid = True
+            
+    def computeQ(self):
+        return self.q
+        
+    def computeMSP(self):
+        return self.m0
+        
+    def computeML(self):
+        return self.ml
+        
+    def computeMD(self):
+        return self.md
+        
+    def computeBeta(self):
+        return self.beta
+        
+    def computeFreeEnergyDensity(self):
+        return self.fe
