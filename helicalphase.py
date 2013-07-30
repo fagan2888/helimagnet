@@ -6,10 +6,11 @@ Created on Fri Jul 12 16:38:09 2013
 """
 
 import sympy
+from sympy.functions import im
 import math
 
 class HelicalPhase:
-    def __init__(self, r=0.0001, a=1.0, c=0.025, u=0.1, H=0, a1=0.01):
+    def __init__(self, r=-0.0001, a=1.0, c=0.025, u=0.1, H=0, a1=0.01):
         self.recompute(r, a, c, u, H, a1)
     
     def recompute(self, r, a, c, u, H, a1):
@@ -45,7 +46,8 @@ class HelicalPhase:
                             eqn3.subs(betasq, nbetasq),
                             eqn4.subs(betasq, nbetasq)],
                            [q, ml, md, m0])
-        # check imaginary: not yet done
+        isAllReal = lambda item: im(item[0])==0 and im(item[1])==0 and im(item[2])==0 and im(item[3])==0
+        sols = filter(isAllReal, sols)
         isValid = lambda item: item[0]>0 and item[1]>=0 and item[2]>=0 and item[3]>0
         sols = filter(isValid, sols)
         return sols
@@ -88,31 +90,29 @@ class HelicalPhase:
             fenergies = map(fed, sols)
             sol_fe_pairs = zip(sols, fenergies)
             sol_fe_pairs = sorted(sol_fe_pairs, key=lambda item: item[1])
-            print sol_fe_pairs
-            print len(sol_fe_pairs)
             sol = sol_fe_pairs[0][0]
             self.q = sol[0]
             self.ml = sol[1]
             self.md = sol[2]
             self.m0 = sol[3]
             self.beta = math.sqrt(betasq)
-            self.fe = sol_fe_pairs[1]
+            self.fe = sol_fe_pairs[0][1]
             self.valid = True
             
     def computeQ(self):
-        return self.q
+        return float(self.q)
         
     def computeMSP(self):
-        return self.m0
+        return float(self.m0)
         
     def computeML(self):
-        return self.ml
+        return float(self.ml)
         
     def computeMD(self):
-        return self.md
+        return float(self.md)
         
     def computeBeta(self):
-        return self.beta
+        return float(self.beta)
         
     def computeFreeEnergyDensity(self):
-        return self.fe
+        return float(self.fe)
