@@ -71,7 +71,7 @@ class HelicalPhase:
         u = self.u
         H = self.H
         a1 = self.a1
-        fe = 0.5*(r+a*q*q-c*q)+0.25*u*m0*m0*m0*m0
+        fe = 0.5*(r+a*q*q-c*q)*m0*m0+0.25*u*m0*m0*m0*m0
         fe += 0.5*r*ml*ml+0.25*u*ml*ml*ml*ml-H*ml*math.sqrt(1-2*betasq)
         fe += 0.5*r*md*md+0.25*u*md*md*md*md-H*md*math.sqrt(2*betasq)
         fe += 0.5*u*(ml*ml*md*md+ml*ml*m0*m0+2*m0*m0*md*md)
