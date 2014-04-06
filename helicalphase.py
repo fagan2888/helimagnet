@@ -5,9 +5,9 @@ Created on Fri Jul 12 16:38:09 2013
 @author: hok1
 """
 
-import sympy
-from sympy.functions import im
 import math
+import numpy as np
+from scipy.optimize import minimize
 
 class HelicalPhase:
     def __init__(self, r=-0.0001, a=1.0, c=0.025, u=0.1, H=0, a1=0.01):
@@ -21,37 +21,7 @@ class HelicalPhase:
         self.H = H
         self.a1 = a1
         self.compute_all()
-    
-    def get_eqns(self):    
-        r = self.r
-        a = self.a
-        c = self.c
-        u = self.u
-        H = self.H
-        a1 = self.a1
-        q, betasq, ml, md, m0 = sympy.symbols('q,betasq,ml,md,m0')
-        eqn1 = (r+(a-a1*betasq*(2-3*betasq))*q**2-c*q) + u*(m0**2+ml**2+2*md**2)
-        eqn2 = (r*ml+u*(ml**2+md**2+m0**2)*ml-H*sympy.sqrt(1-2*betasq))
-        eqn3 = r*md+u*(ml**2+md**2)*md+2*u*m0**2*md-H*sympy.sqrt(2*betasq)
-        eqn4 = 0.5*(2*a*q-c)-2*a1*q*betasq*(2-3*betasq)
-        eqn5 = H*ml/sympy.sqrt(1-2*betasq)-H*md/sympy.sqrt(2*betasq)-2*a1*q**2*m0**2*(1-3*betasq)
-        return eqn1, eqn2, eqn3, eqn4, eqn5
-        
-    def solve_eqn(self):
-        q, betasq, ml, md, m0 = sympy.symbols('q,betasq,ml,md,m0')
-        nbetasq = self.model_betasq()
-        eqn1, eqn2, eqn3, eqn4, eqn5 = self.get_eqns()
-        sols = sympy.solve([eqn1.subs(betasq, nbetasq), 
-                            eqn2.subs(betasq, nbetasq), 
-                            eqn3.subs(betasq, nbetasq),
-                            eqn4.subs(betasq, nbetasq)],
-                           [q, ml, md, m0])
-        isAllReal = lambda item: im(item[0])==0 and im(item[1])==0 and im(item[2])==0 and im(item[3])==0
-        sols = filter(isAllReal, sols)
-        isValid = lambda item: item[0]>0 and item[1]>=0 and item[2]>=0 and item[3]>0
-        sols = filter(isValid, sols)
-        return sols
-        
+            
     def model_betasq(self):
         r = self.r
         a = self.a
@@ -78,41 +48,75 @@ class HelicalPhase:
         fe += -a1*q*q*m0*m0*(2-3*betasq)*betasq
         return fe
         
+    def packedFreeEnergyDensity(self, xvec):
+        return self.primitiveFreeEnergyDensity(xvec[0], xvec[1], xvec[2],
+                                               xvec[3], xvec[4])
+                                               
+    def packedFreeEnergyDensityGradient(self, xvec):
+        r = self.r
+        a = self.a
+        c = self.c
+        u = self.u
+        H = self.H
+        a1 = self.a1
+
+        grad0 = 0.5*(2*a*xvec[0]-c)
+        grad0 += -2*a1*xvec[0]*xvec[3]*xvec[3]*(2-3*xvec[4])*xvec[4]
+        
+        grad1 = r*xvec[1]+u*xvec[1]*xvec[1]*xvec[1]-H*math.sqrt(1-2*xvec[4])
+        grad1 += u*xvec[1]*(xvec[2]*xvec[2]+xvec[3]*xvec[3])
+        
+        grad2 = r*xvec[2]+u*xvec[2]*xvec[2]*xvec[2]-H*math.sqrt(2*xvec[4])
+        grad2 += u*(xvec[1]*xvec[1]+2*xvec[3]*xvec[3])*xvec[2]
+        
+        grad3 = (r+a*xvec[0]*xvec[0]-c*xvec[0])*xvec[3]+u*xvec[3]*xvec[3]*xvec[3]
+        grad3 += u*(xvec[1]*xvec[1]+2*xvec[2]*xvec[2])*xvec[3]
+        grad3 += -2*a1*xvec[0]*xvec[0]*xvec[3]*(2-3*xvec[4])*xvec[4]
+
+        grad4 = H*xvec[1]*xvec[4]/math.sqrt(1-2*xvec[4])
+        grad4 += -H*xvec[2]*math.sqrt(0.5*xvec[4])
+        grad4 += -2*a1*xvec[0]*xvec[0]*xvec[3]*xvec[3]*(1-3*xvec[4])
+
+        return np.array([grad0, grad1, grad2, grad3, grad4])         
+        
     def compute_all(self):
-        betasq = self.model_betasq()
-        sols = self.solve_eqn()
-        if len(sols) == 0:
-            self.valid = False
-        else:
-            fed = lambda sol: self.primitiveFreeEnergyDensity(sol[0], sol[1],
-                                                              sol[2], sol[3],
-                                                              betasq)
-            fenergies = map(fed, sols)
-            sol_fe_pairs = zip(sols, fenergies)
-            sol_fe_pairs = sorted(sol_fe_pairs, key=lambda item: item[1])
-            sol = sol_fe_pairs[0][0]
-            self.q = sol[0]
-            self.ml = sol[1]
-            self.md = sol[2]
-            self.m0 = sol[3]
-            self.beta = math.sqrt(betasq)
-            self.fe = sol_fe_pairs[0][1]
-            self.valid = True
+        r = self.r
+        a = self.a
+        c = self.c
+        u = self.u
+        H = self.H
+        #a1 = self.a1
+        
+        q0 = 0.5*c/a
+        ml0 = H/a/q0/q0
+        md0 = 0.0
+        msp0 = np.sqrt((a*q0*q0-r)/u)
+        betasq0 = self.model_betasq()
+        init_x0 = np.array([q0, ml0, md0, msp0, betasq0])
+        
+        res = minimize(self.packedFreeEnergyDensity, init_x0, method='BFGS',
+                       jac=self.packedFreeEnergyDensityGradient)
+        self.q = res.x[0]
+        self.ml = res.x[1]
+        self.md = res.x[2]
+        self.m0 = res.x[3]
+        self.beta = np.sqrt(res.x[4])
+        self.fden = self.packedFreeEnergyDensity(res.x)
             
     def computeQ(self):
-        return float(self.q)
+        pass
         
     def computeMSP(self):
-        return float(self.m0)
+        pass
         
     def computeML(self):
-        return float(self.ml)
+        pass
         
     def computeMD(self):
-        return float(self.md)
+        pass
         
     def computeBeta(self):
-        return float(self.beta)
+        pass
         
     def computeFreeEnergyDensity(self):
-        return float(self.fe)
+        pass
