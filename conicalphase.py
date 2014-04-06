@@ -30,7 +30,7 @@ class ConicalPhase:
         self.q = 0.5 * self.c / self.a
         
     def computeMH(self):
-        sqMH = self.a*self.q*self.q - self.r
+        sqMH = (self.a*self.q*self.q - self.r) / self.u
         if sqMH >= 0:
             self.mH = np.sqrt(sqMH)
             self.valid = True
