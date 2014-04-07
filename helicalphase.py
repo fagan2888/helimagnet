@@ -48,11 +48,7 @@ class HelicalPhase:
         fe += -a1*q*q*m0*m0*(2-3*betasq)*betasq
         return fe
         
-    def packedFreeEnergyDensity(self, xvec):
-        return self.primitiveFreeEnergyDensity(xvec[0], xvec[1], xvec[2],
-                                               xvec[3], xvec[4])
-                                               
-    def packedFreeEnergyDensityGradient(self, xvec):
+    def primitiveFreeEnergyDensityGradient(self, q, ml, md, m0, betasq):
         r = self.r
         a = self.a
         c = self.c
@@ -60,24 +56,33 @@ class HelicalPhase:
         H = self.H
         a1 = self.a1
 
-        grad0 = 0.5*(2*a*xvec[0]-c)
-        grad0 += -2*a1*xvec[0]*xvec[3]*xvec[3]*(2-3*xvec[4])*xvec[4]
+        grad0 = 0.5*(2*a*q-c)
+        grad0 += -2*a1*q*m0*m0*(2-3*betasq)*betasq
         
-        grad1 = r*xvec[1]+u*xvec[1]*xvec[1]*xvec[1]-H*math.sqrt(1-2*xvec[4])
-        grad1 += u*xvec[1]*(xvec[2]*xvec[2]+xvec[3]*xvec[3])
+        grad1 = r*ml+u*ml*ml*ml-H*math.sqrt(1-2*betasq)
+        grad1 += u*ml*(md*md+m0*m0)
         
-        grad2 = r*xvec[2]+u*xvec[2]*xvec[2]*xvec[2]-H*math.sqrt(2*xvec[4])
-        grad2 += u*(xvec[1]*xvec[1]+2*xvec[3]*xvec[3])*xvec[2]
+        grad2 = r*md+u*md*md*md-H*math.sqrt(2*betasq)
+        grad2 += u*(ml*ml+2*m0*m0)*md
         
-        grad3 = (r+a*xvec[0]*xvec[0]-c*xvec[0])*xvec[3]+u*xvec[3]*xvec[3]*xvec[3]
-        grad3 += u*(xvec[1]*xvec[1]+2*xvec[2]*xvec[2])*xvec[3]
-        grad3 += -2*a1*xvec[0]*xvec[0]*xvec[3]*(2-3*xvec[4])*xvec[4]
+        grad3 = (r+a*q*q-c*q)*m0+u*m0*m0*m0
+        grad3 += u*(ml*ml+2*md*md)*m0
+        grad3 += -2*a1*q*q*m0*(2-3*betasq)*betasq
 
-        grad4 = H*xvec[1]*xvec[4]/math.sqrt(1-2*xvec[4])
-        grad4 += -H*xvec[2]*math.sqrt(0.5*xvec[4])
-        grad4 += -2*a1*xvec[0]*xvec[0]*xvec[3]*xvec[3]*(1-3*xvec[4])
+        grad4 = H*ml*betasq/math.sqrt(1-2*betasq)
+        grad4 += -H*md*math.sqrt(0.5*betasq)
+        grad4 += -2*a1*q*q*m0*m0*(1-3*betasq)
 
-        return np.array([grad0, grad1, grad2, grad3, grad4])         
+        return np.array([grad0, grad1, grad2, grad3, grad4])               
+        
+    def packedFreeEnergyDensity(self, xvec):
+        return self.primitiveFreeEnergyDensity(xvec[0], xvec[1], xvec[2],
+                                               xvec[3], xvec[4])
+                                               
+    def packedFreeEnergyDensityGradient(self, xvec):
+        return self.primitiveFreeEnergyDensityGradient(xvec[0], xvec[1], 
+                                                       xvec[2], xvec[3],
+                                                       xvec[4])     
         
     def compute_all(self):
         r = self.r
