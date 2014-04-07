@@ -35,6 +35,8 @@ class HelicalPhase:
         return betasq
         
     def primitiveFreeEnergyDensity(self, q, ml, md, m0, betasq):
+        if betasq<0:
+            return float('inf')
         r = self.r
         a = self.a
         c = self.c
@@ -49,6 +51,8 @@ class HelicalPhase:
         return fe
         
     def primitiveFreeEnergyDensityGradient(self, q, ml, md, m0, betasq):
+        if betasq<0:
+            return np.zeros(5)
         r = self.r
         a = self.a
         c = self.c
