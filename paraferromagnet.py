@@ -26,3 +26,6 @@ class FieldPolarizedMagnet:
         
     def primitiveFreeEnergyDensity(self, ml):
         return (0.5*self.r*ml*ml+0.25*self.u*ml*ml*ml*ml-self.H)
+        
+    def phase_name(self):
+        return 'paramagnet' if self.r >= 0 else 'ferromagnet'
