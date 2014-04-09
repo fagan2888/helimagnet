@@ -136,3 +136,6 @@ class HelicalPhase:
         
     def computeFreeEnergyDensity(self):
         pass
+    
+    def phase_name(self):
+        return 'helical phase'
