@@ -50,3 +50,6 @@ class ConicalPhase:
             self.fden += -self.H*self.ml
         else:
             self.fden = float("inf")
+            
+    def phase_name(self):
+        return 'conical phase'
