@@ -9,6 +9,10 @@ import paraferromagnet as pfm
 import conicalphase as cp
 import helicalphase as hp
 import itertools
+import numpy as np
+import matplotlib.pyplot as plt
+import csv
+from operator import add
 
 class PhaseDeterminationMachine:
     def __init__(self, config, phaseclasses):
@@ -39,3 +43,32 @@ class PhaseDeterminationMachine:
             for param_name, param_value in zip(param_names, parameters):
                 ind_param[param_name] = param_value
             self.determine_phase(ind_param)
+
+    def plot_phase_diagram_2d(self, param_names):
+        if len(param_names) < 2:
+            return
+        horiz_param_val = map(lambda point: point[0][param_names[0]], self.points)
+        vert_param_val = map(lambda point: point[0][param_names[1]], self.points)
+        phase_names = map(lambda point: point[1], self.points)
+        phase_name_set = list(set(phase_names))
+        phase_name_code_dict = {}
+        for idx, phase_name in zip(range(len(phase_name_set)), phase_name_set):
+            phase_name_code_dict[phase_name] = idx
+        phase_values = np.array(map(lambda name: phase_name_code_dict[name], phase_names))
+        plt.scatter(horiz_param_val, vert_param_val, c=phase_values)
+
+    def save_points(self, filename):
+        fields = list(set(reduce(add, map(lambda point: point[0].keys(), self.points))))
+        field_to_col_dict = {}
+        for idx, field in zip(range(len(fields)), fields):
+            field_to_col_dict[field] = idx
+        outf = open(filename, 'wb')
+        writer = csv.writer(outf)
+        writer.writerow(fields+['phase'])
+        for point in self.points:
+            rowtowrite = [0]*len(fields)
+            for param in point[0]:
+                rowtowrite[field_to_col_dict[param]] = point[0][param]
+            rowtowrite.append(point[1])
+            writer.writerow(rowtowrite)
+        outf.close()
