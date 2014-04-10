@@ -54,7 +54,6 @@ class HelicalPhase:
         return fe
         
     def primitiveFreeEnergyDensityGradient(self, q, ml, md, m0, betasq):
-        print q, ml, md, m0, betasq
         if betasq<0 or betasq>0.5:
             return np.zeros(5)
         r = self.r
