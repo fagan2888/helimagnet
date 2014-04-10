@@ -17,6 +17,9 @@ class FieldPolarizedMagnet:
         self.H = H
         self.computeML()
         self.valid = True
+
+    def recompute_config(self, config, ind_param):
+        self.recompute(ind_param['r'], config['u'], ind_param['H'])
         
     def computeML(self):
         complex_mls = np.roots([self.u, 0.0, self.r, -self.H])

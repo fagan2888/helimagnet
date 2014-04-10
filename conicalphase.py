@@ -25,6 +25,9 @@ class ConicalPhase:
             self.computeFreeEnergyDensity()
         else:
             self.fden = float("inf")
+
+    def recompute_config(self, config, ind_param):
+        self.recompute(ind_param['r'], config['a'], config['c'], config['u'], ind_param['H'])
         
     def computeQ(self):
         self.q = 0.5 * self.c / self.a

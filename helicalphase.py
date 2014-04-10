@@ -21,6 +21,9 @@ class HelicalPhase:
         self.H = H
         self.a1 = a1
         self.compute_all()
+
+    def recompute_config(self, config, ind_param):
+        self.recompute(ind_param['r'], config['a'], config['c'], config['u'], ind_param['H'], config['a1'])
             
     def model_betasq(self):
         r = self.r

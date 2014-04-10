@@ -24,6 +24,6 @@ class PhaseDeterminationMachine:
         
     def determine_phase(self, ind_param):
         phase_energies = self.compute_phase_energies(ind_param)
-        sorted_phase_energies = sorted(phase_energies.items(), key=lambda item: item[1], reverse=True)
+        sorted_phase_energies = sorted(phase_energies.items(), key=lambda item: item[1])
         return sorted_phase_energies[0][0]
     
