@@ -38,7 +38,7 @@ class HelicalPhase:
         return betasq
         
     def primitiveFreeEnergyDensity(self, q, ml, md, m0, betasq):
-        if betasq<0:
+        if betasq<0 or betasq>0.5:
             return float('inf')
         r = self.r
         a = self.a
@@ -54,7 +54,8 @@ class HelicalPhase:
         return fe
         
     def primitiveFreeEnergyDensityGradient(self, q, ml, md, m0, betasq):
-        if betasq<0:
+        print q, ml, md, m0, betasq
+        if betasq<0 or betasq>0.5:
             return np.zeros(5)
         r = self.r
         a = self.a
@@ -98,10 +99,14 @@ class HelicalPhase:
         u = self.u
         H = self.H
         #a1 = self.a1
-        
+
         q0 = 0.5*c/a
         ml0 = H/a/q0/q0/1.4142
         md0 = H/a/q0/q0/1.4142
+        if a*q0*q0-r < 0:
+            self.valid = False
+            self.fden = float('inf')
+            return
         msp0 = np.sqrt((a*q0*q0-r)/u)
         betasq0 = self.model_betasq()
         init_x0 = np.array([q0, ml0, md0, msp0, betasq0])
@@ -113,13 +118,13 @@ class HelicalPhase:
         self.ml = res.x[1]
         self.md = res.x[2]
         self.m0 = res.x[3]
-        if self.q>0 and self.m0>0 and self.md>0 and res.x[4]>0:
+        if self.q>0 and self.m0>=0 and self.md>=0 and res.x[4]>0:
             self.valid = True
             self.beta = np.sqrt(res.x[4])
             self.fden = self.packedFreeEnergyDensity(res.x)
         else:
             self.valid = False
-            self.beta = None
+            self.beta = 0
             self.fden = float('inf')
             
     def computeQ(self):
