@@ -19,9 +19,9 @@ class ConicalPhase:
         self.H = H
         self.computeQ()
         self.computeMH()
+        self.computeML()
+        self.computeMSP()
         if self.valid:
-            self.computeML()
-            self.computeMSP()
             self.computeFreeEnergyDensity()
         else:
             self.fden = float("inf")
@@ -44,7 +44,10 @@ class ConicalPhase:
         self.ml = self.H / self.a / self.q / self.q
         
     def computeMSP(self):
-        self.msp = np.sqrt(self.mH*self.mH - self.ml*self.ml)
+        if self.mH*self.mH - self.ml*self.ml >= 0:
+            self.msp = np.sqrt(self.mH*self.mH - self.ml*self.ml)
+        else:
+            self.valid = False
         
     def computeFreeEnergyDensity(self):
         if self.valid:
